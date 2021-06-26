@@ -1,9 +1,10 @@
 package client;
 
+import javax.xml.ws.BindingProvider;
+import javax.xml.ws.handler.MessageContext;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class WebServiceClient {
     public static void main(String[] args)
@@ -91,7 +92,9 @@ public class WebServiceClient {
 
         int id;
         try {
-            id = personService.getPersonWebServicePort().addPerson(idParam, nameParam, maleParam, ageParam, positionParam);
+            _0._0._0._0._9030.personservice.PersonWebService port = personService.getPersonWebServicePort();
+            getCredentials(port);
+            id = port.addPerson(idParam, nameParam, maleParam, ageParam, positionParam);
         } catch(Exception ex) {
             System.out.println("ERROR: " + ex.getMessage());
             return;
@@ -119,7 +122,9 @@ public class WebServiceClient {
 
         String result;
         try {
-            result = personService.getPersonWebServicePort().updatePerson(idParam, nameParam, maleParam, ageParam, positionParam);
+            _0._0._0._0._9030.personservice.PersonWebService port = personService.getPersonWebServicePort();
+            getCredentials(port);
+            result = port.updatePerson(idParam, nameParam, maleParam, ageParam, positionParam);
         } catch(Exception ex) {
             System.out.println("ERROR: " + ex.getMessage());
             return;
@@ -134,13 +139,25 @@ public class WebServiceClient {
 
         String result;
         try {
-            result = personService.getPersonWebServicePort().deletePerson(idParam);
+            _0._0._0._0._9030.personservice.PersonWebService port = personService.getPersonWebServicePort();
+            getCredentials(port);
+            result = port.deletePerson(idParam);
         } catch(Exception ex) {
             System.out.println("ERROR: " + ex.getMessage());
             return;
         }
 
         System.out.println(result);
+    }
+
+    private static void getCredentials(_0._0._0._0._9030.personservice.PersonWebService port) {
+        Map<String, Object> requestContext = ((BindingProvider)port).getRequestContext();
+        requestContext.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, "http://localhost:9030/PersonService?wsdl");
+
+        Map<String, List<String>> requestHeaders = new HashMap<>();
+        requestHeaders.put("Username", Collections.singletonList("user"));
+        requestHeaders.put("Password", Collections.singletonList("pswd"));
+        requestContext.put(MessageContext.HTTP_REQUEST_HEADERS, requestHeaders);
     }
 
     private static String getParam(Scanner scanner, String paramName) {

@@ -3,13 +3,20 @@ import constants.ResultConstants;
 import exceptions.*;
 import faults.*;
 
+import javax.annotation.Resource;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.jws.WebService;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
 import java.util.List;
+import java.util.Map;
 
 @WebService(serviceName = "PersonService", targetNamespace = "http://0.0.0.0:9030/PersonService")
 public class PersonWebService {
+    @Resource
+    WebServiceContext wsc;
+
     @WebMethod(operationName = "getPersons")
     public List<Person> getPersons(@WebParam(name = "idParam") String idParam,
                                    @WebParam(name = "nameParam") String nameParam,
@@ -40,7 +47,8 @@ public class PersonWebService {
                                    @WebParam(name = "maleParam") String maleParam,
                                    @WebParam(name = "ageParam") String ageParam,
                                    @WebParam(name = "positionParam") String positionParam)
-            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException {
+            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException, AuthenticationException {
+        authentication();
         checkIdParamOnNull(idParam);
         checkIdParamOnEmpty(idParam);
         int id = checkIdParamOnNumber(idParam);
@@ -77,7 +85,8 @@ public class PersonWebService {
                          @WebParam(name = "maleParam") String maleParam,
                          @WebParam(name = "ageParam") String ageParam,
                          @WebParam(name = "positionParam") String positionParam)
-            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException {
+            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException, AuthenticationException {
+        authentication();
         checkIdParamOnNull(idParam);
         checkIdParamOnEmpty(idParam);
         int id = checkIdParamOnNumber(idParam);
@@ -105,7 +114,8 @@ public class PersonWebService {
 
     @WebMethod(operationName = "deletePerson")
     public String deletePerson(@WebParam(name = "idParam") String idParam)
-            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException {
+            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException, AuthenticationException {
+        authentication();
         checkIdParamOnNull(idParam);
         checkIdParamOnEmpty(idParam);
         int id = checkIdParamOnNumber(idParam);
@@ -121,6 +131,30 @@ public class PersonWebService {
             return result;
         }
     }
+
+    private void authentication() throws AuthenticationException {
+        MessageContext mc = wsc.getMessageContext();
+
+        Map httpHeaders = (Map) mc.get(MessageContext.HTTP_REQUEST_HEADERS);
+        List userList = (List) httpHeaders.get("Username");
+        List passList = (List) httpHeaders.get("Password");
+
+        String username = "";
+        String password = "";
+
+        if(userList != null){
+            username = userList.get(0).toString();
+        }
+        if(passList != null){
+            password = passList.get(0).toString();
+        }
+
+        if (!username.equals("user") || !password.equals("pswd")){
+            AuthenticationFault fault = AuthenticationFault.defaultInstance();
+            throw new AuthenticationException(fault.getMessage(), fault);
+        }
+    }
+
 
     private void checkIdParamOnNull(String idParam) throws NullParamException {
         if (idParam == null) {
