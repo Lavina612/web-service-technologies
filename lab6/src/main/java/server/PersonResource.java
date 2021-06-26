@@ -5,7 +5,10 @@ import server.exceptions.*;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
+import java.util.StringTokenizer;
 
 @Path("/persons")
 @Produces(MediaType.APPLICATION_JSON)
@@ -36,8 +39,9 @@ public class PersonResource {
 
     @POST
     @Path("/add")
-    public String addPerson(Person person)
-            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException {
+    public String addPerson(@HeaderParam("authorization") String credentials, Person person)
+            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException, AuthenticationException {
+        authentication(credentials);
         String idParam = person.getId() == null ? null : String.valueOf(person.getId());
         String nameParam = person.getName();
         String maleParam = person.getMale() == null ? null : String.valueOf(person.getMale());
@@ -75,8 +79,9 @@ public class PersonResource {
 
     @PUT
     @Path("/update/{id}")
-    public String updatePerson(@PathParam("id") String id, Person person)
-            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException {
+    public String updatePerson(@HeaderParam("authorization") String credentials, @PathParam("id") String id, Person person)
+            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException, AuthenticationException {
+        authentication(credentials);
         String idParam = person.getId() == null ? null : String.valueOf(person.getId());
         String nameParam = person.getName();
         String maleParam = person.getMale() == null ? null : String.valueOf(person.getMale());
@@ -113,8 +118,9 @@ public class PersonResource {
 
     @DELETE
     @Path("/delete/{id}")
-    public String deletePerson(@PathParam("id") String idPathParam)
-            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException {
+    public String deletePerson(@HeaderParam("authorization") String credentials, @PathParam("id") String idPathParam)
+            throws ParamTypeException, EmptyParamException, NegativeParamException, NullParamException, SQLException, AuthenticationException {
+        authentication(credentials);
         checkIdParamOnNull(idPathParam);
         checkIdParamOnEmpty(idPathParam);
         int id = checkIdParamOnNumber(idPathParam);
@@ -127,6 +133,28 @@ public class PersonResource {
             throw new SQLException(ResultConstants.FAIL + ": Make sure that the person with this id exists.");
         } else {
             return result;
+        }
+    }
+
+    private void authentication(String authenticationString) throws AuthenticationException {
+        if (authenticationString == null)
+            throw AuthenticationException.DEFAULT_INSTANCE;
+
+        final String credentials = authenticationString.replaceFirst("Basic ", "");
+        String usernameAndPassword;
+        try {
+            byte[] decodedBytes = Base64.getDecoder().decode(credentials);
+            usernameAndPassword = new String(decodedBytes, "UTF-8");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        final StringTokenizer tokenizer = new StringTokenizer(credentials, ":");
+        final String username = tokenizer.nextToken();
+        final String password = tokenizer.nextToken();
+
+        if (!username.equals("user") || !password.equals("pswd")) {
+            throw AuthenticationException.DEFAULT_INSTANCE;
         }
     }
 

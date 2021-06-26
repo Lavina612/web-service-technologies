@@ -4,6 +4,7 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.GenericType;
 import com.sun.jersey.api.client.WebResource;
+import sun.misc.BASE64Encoder;
 
 import javax.ws.rs.core.MediaType;
 import java.net.URL;
@@ -117,7 +118,7 @@ public class App {
         WebResource webResource = client.resource(URL + "/add");
         ClientResponse response;
         try {
-            response = webResource.type(MediaType.APPLICATION_JSON).post(ClientResponse.class, person);
+            response = webResource.type(MediaType.APPLICATION_JSON).header("Authorization", "Basic " + getCredentialsEncrypted()).post(ClientResponse.class, person);
         } catch(Exception ex) {
             System.out.println("ERROR: " + ex.getMessage());
             return;
@@ -157,7 +158,7 @@ public class App {
         WebResource webResource = client.resource(URL + "/update/" + id);
         ClientResponse response;
         try {
-            response = webResource.type(MediaType.APPLICATION_JSON).put(ClientResponse.class, person);
+            response = webResource.type(MediaType.APPLICATION_JSON).header("Authorization", "Basic " + getCredentialsEncrypted()).put(ClientResponse.class, person);
         } catch(Exception ex) {
             System.out.println("ERROR: " + ex.getMessage());
             return;
@@ -179,7 +180,7 @@ public class App {
         WebResource webResource = client.resource(URL + "/delete/" + id);
         ClientResponse response;
         try {
-            response = webResource.accept(MediaType.APPLICATION_JSON).delete(ClientResponse.class);
+            response = webResource.accept(MediaType.APPLICATION_JSON).header("Authorization", "Basic " + getCredentialsEncrypted()).delete(ClientResponse.class);
         } catch(Exception ex) {
             System.out.println("ERROR: " + ex.getMessage());
             return;
@@ -198,5 +199,12 @@ public class App {
         System.out.println("Enter " + paramName + ":");
         String param = scanner.nextLine();
         return param.equals("") ? null : param;
+    }
+
+    private static String getCredentialsEncrypted() {
+        String name = "user";
+        String password = "pswd";
+        String credentials = name + ":" + password;
+        return new BASE64Encoder().encode(credentials.getBytes());
     }
 }
